@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>ADS Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --green:#00A878;--green-dark:#008f65;--green-glow:rgba(0,168,120,0.2);
+  --bg:#121212;--card:#1e1e1e;--surf:#252525;--surf2:#2e2e2e;
+  --text:#e0e0e0;--muted:#888;--dim:#555;
+  --me-bg:#00A878;--me-txt:#121212;--other-bg:#2a2a2a;
+  --danger:#ff4757;--warn:#ffa502;
+  --border:rgba(255,255,255,0.07);--radius:16px;--rad:10px;
+  --shadow:0 8px 32px rgba(0,0,0,0.5);--nav:64px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:'Poppins',sans-serif;}
+html,body{width:100%;height:100%;background:#0a0a0a;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+
+/* APP SHELL */
+#app{width:100%;max-width:400px;height:100vh;max-height:800px;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow);}
+
+/* PAGES CONTAINER */
+#pages{flex:1;position:relative;overflow:hidden;}
+.page{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);visibility:hidden;opacity:0;pointer-events:none;transition:opacity .2s;}
+.page.active{visibility:visible;opacity:1;pointer-events:all;}
+
+/* BOTTOM NAV */
+#nav{height:var(--nav);background:var(--card);border-top:1px solid var(--border);display:flex;flex-shrink:0;}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--muted);cursor:pointer;position:relative;padding:8px 0;transition:color .2s;}
+.nb.on{color:var(--green);}
+.nb svg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none;}
+.nb span{font-size:10px;font-weight:500;}
+.nb .bdg{position:absolute;top:6px;right:18px;min-width:16px;height:16px;background:var(--danger);color:#fff;font-size:9px;font-weight:700;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 3px;}
+.nb .bdg.on{display:flex;}
+
+/* HEADER */
+.hdr{height:60px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;}
+.hdr-logo{font-size:20px;font-weight:700;color:var(--green);}
+.hdr h1{flex:1;font-size:17px;font-weight:600;color:var(--text);}
+.ico{width:38px;height:38px;background:var(--surf);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);flex-shrink:0;}
+.ico svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;}
+
+/* CONTACTS */
+#contact-list{flex:1;overflow-y:auto;padding:6px;}
+.ci{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:var(--rad);cursor:pointer;position:relative;transition:background .15s;}
+.ci:active{background:var(--surf);}
+.av{width:46px;height:46px;border-radius:50%;flex-shrink:0;position:relative;}
+.av img{width:46px;height:46px;border-radius:50%;object-fit:cover;}
+.dot{position:absolute;bottom:1px;right:1px;width:11px;height:11px;background:#00e676;border-radius:50%;border:2px solid var(--bg);display:none;}
+.av.online .dot{display:block;}
+.ci-info{flex:1;overflow:hidden;}
+.ci-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ci-prev{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.ci-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.ci-time{font-size:10px;color:var(--dim);}
+.ubdg{min-width:18px;height:18px;background:var(--green);color:var(--me-txt);font-size:10px;font-weight:700;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;}
+.ubdg.on{display:flex;}
+
+/* EMPTY STATE */
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);padding:40px;text-align:center;}
+.empty svg{width:52px;height:52px;opacity:.3;stroke:currentColor;stroke-width:1.5;fill:none;}
+.empty p{font-size:13px;line-height:1.6;}
+
+/* REQUESTS */
+.ri{display:flex;align-items:center;gap:11px;padding:12px;background:var(--surf);border-radius:var(--rad);margin:4px 8px;}
+.ri-info{flex:1;}
+.ri-name{font-size:14px;font-weight:600;color:var(--text);}
+.ri-id{font-size:11px;color:var(--muted);}
+.ri-acts{display:flex;gap:8px;}
+.btn-acc{padding:7px 15px;background:var(--green);border:none;border-radius:20px;font-size:12px;font-weight:700;color:#121212;cursor:pointer;}
+.btn-dec{padding:7px 13px;background:var(--surf2);border:none;border-radius:20px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;}
+
+/* CALL LOGS */
+
+
+/* CHAT VIEW */
+#chat{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:100;visibility:hidden;}
+#chat.open{transform:translateX(0);visibility:visible;}
+#chat-hdr{height:60px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:9px;flex-shrink:0;}
+.back{width:36px;height:36px;background:none;border:none;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;}
+.back svg{width:22px;height:22px;stroke:currentColor;stroke-width:2.5;fill:none;}
+#chat-dp{width:38px;height:38px;border-radius:50%;}
+#chat-info{flex:1;}
+#chat-name{font-size:14px;font-weight:600;color:var(--text);}
+#chat-status{font-size:11px;color:var(--green);}
+.ca{width:36px;height:36px;background:none;border:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;}
+.ca svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;}
+.ca:active{color:var(--green);}
+
+/* MESSAGES */
+#msgs{flex:1;overflow-y:auto;padding:14px 11px;display:flex;flex-direction:column;gap:5px;}
+.bbl{max-width:78%;padding:10px 13px;border-radius:var(--radius);font-size:13px;line-height:1.5;word-break:break-word;animation:bblin .18s ease;}
+@keyframes bblin{from{opacity:0;transform:scale(.95) translateY(4px);}to{opacity:1;transform:none;}}
+.bbl.me{background:var(--me-bg);color:var(--me-txt);align-self:flex-end;border-bottom-right-radius:4px;}
+.bbl.them{background:var(--other-bg);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px;}
+.btime{font-size:9px;opacity:.6;margin-top:3px;text-align:right;}
+.bbl.them .btime{text-align:left;}
+#typing{align-self:flex-start;background:var(--other-bg);padding:10px 15px;border-radius:var(--radius);border-bottom-left-radius:4px;display:none;gap:4px;align-items:center;}
+#typing.on{display:flex;}
+.td{width:7px;height:7px;background:var(--muted);border-radius:50%;animation:tb 1.2s infinite;}
+.td:nth-child(2){animation-delay:.2s;}.td:nth-child(3){animation-delay:.4s;}
+@keyframes tb{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+
+/* CHAT INPUT */
+#chat-foot{padding:9px 11px;background:var(--card);border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;}
+#msg-in{flex:1;background:var(--surf);border:none;border-radius:22px;padding:10px 15px;font-size:13px;color:var(--text);outline:none;resize:none;max-height:90px;line-height:1.4;}
+#msg-in::placeholder{color:var(--dim);}
+#send{width:40px;height:40px;background:var(--green);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+#send svg{width:17px;height:17px;stroke:#121212;stroke-width:2.5;fill:none;}
+
+/* CHAT OPTIONS */
+#copts{position:absolute;top:62px;right:8px;background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:5px 0;z-index:200;min-width:155px;box-shadow:var(--shadow);display:none;}
+#copts.on{display:block;}
+.copt{padding:12px 15px;font-size:13px;color:var(--text);cursor:pointer;}
+.copt:active{background:var(--surf);}
+.copt.red{color:var(--danger);}
+
+/* OVERLAYS */
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;z-index:500;opacity:0;pointer-events:none;visibility:hidden;transition:opacity .22s;}
+.ovl.on{opacity:1;pointer-events:all;visibility:visible;}
+.sheet{width:100%;max-width:400px;margin:0 auto;background:var(--card);border-radius:22px 22px 0 0;padding:28px 22px 36px;transform:translateY(60px);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+.ovl.on .sheet{transform:translateY(0);}
+.sheet h2{font-size:19px;font-weight:700;color:var(--text);margin-bottom:5px;}
+.sheet .sub{font-size:13px;color:var(--muted);margin-bottom:22px;}
+
+/* AUTH */
+#auth-screen{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;z-index:9999;}
+#auth-inner{width:100%;max-width:400px;height:100%;display:flex;flex-direction:column;}
+#auth-top{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 24px 0;}
+#auth-logo{font-size:38px;font-weight:700;color:var(--green);letter-spacing:-1px;}
+#auth-tagline{font-size:13px;color:var(--muted);margin-top:5px;}
+#auth-card{background:var(--card);border-radius:24px 24px 0 0;padding:30px 22px 44px;margin-top:40px;}
+.flbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;}
+.finp{width:100%;background:var(--surf);border:1.5px solid transparent;border-radius:var(--rad);padding:13px 14px;font-size:14px;color:var(--text);outline:none;transition:border-color .2s;}
+.finp:focus{border-color:var(--green);}
+.fg{margin-bottom:14px;}
+.ferr{font-size:12px;color:var(--danger);margin-bottom:8px;display:none;}
+.ferr.on{display:block;}
+.btn-p{width:100%;padding:15px;background:var(--green);border:none;border-radius:var(--rad);font-size:15px;font-weight:700;color:#121212;cursor:pointer;display:block;margin-top:6px;transition:transform .1s,background .15s;}
+.btn-p:active{transform:scale(.97);background:var(--green-dark);}
+.sw{text-align:center;margin-top:18px;font-size:13px;color:var(--muted);}
+.sw a{color:var(--green);font-weight:600;cursor:pointer;}
+
+/* PROFILE SETUP */
+#prof-screen{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;z-index:9998;overflow-y:auto;}
+#prof-screen.on{display:flex;}
+#prof-inner{width:100%;max-width:400px;padding:40px 24px 56px;display:flex;flex-direction:column;gap:14px;}
+#ep{width:80px;height:80px;border-radius:50%;border:2.5px solid var(--green);display:block;margin:0 auto 6px;}
+
+/* SIDE MENU */
+#menu{position:fixed;inset:0;z-index:800;display:none;}
+#menu.on{display:block;}
+#menu-bg{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);}
+#menu-panel{position:absolute;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:400px;height:100%;background:var(--card);}
+#menu-inner{width:75%;height:100%;background:var(--card);display:flex;flex-direction:column;}
+#menu-top{padding:44px 20px 20px;background:linear-gradient(135deg,rgba(0,168,120,.12),transparent);border-bottom:1px solid var(--border);}
+#m-dp{width:62px;height:62px;border-radius:50%;border:2px solid var(--green);}
+#m-name{font-size:15px;font-weight:700;color:var(--text);margin-top:10px;}
+#m-uid{font-size:12px;color:var(--green);margin-top:2px;}
+#m-bio{font-size:12px;color:var(--muted);margin-top:3px;}
+.mi{display:flex;align-items:center;gap:13px;padding:14px 20px;cursor:pointer;color:var(--text);font-size:14px;font-weight:500;transition:background .15s;}
+.mi:active{background:var(--surf);}
+.mi svg{width:17px;height:17px;stroke:currentColor;stroke-width:2;fill:none;opacity:.7;}
+.mi.red{color:var(--danger);}
+
+/* FORMS */
+.lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;}
+.inp{width:100%;background:var(--surf);border:1.5px solid transparent;border-radius:var(--rad);padding:12px 13px;font-size:14px;color:var(--text);outline:none;transition:border-color .2s;}
+.inp:focus{border-color:var(--green);}
+.cc{font-size:10px;color:var(--dim);text-align:right;margin-top:2px;}
+
+/* SEARCH RESULT */
+#sr{display:none;align-items:center;gap:11px;padding:12px;background:var(--surf);border-radius:var(--rad);margin-top:12px;}
+#sr.on{display:flex;}
+
+/* PROFILE EDIT */
+#edit-screen{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;z-index:900;overflow-y:auto;}
+#edit-screen.on{display:flex;}
+#edit-hdr{width:100%;max-width:400px;height:60px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;}
+#edit-hdr h2{flex:1;font-size:16px;font-weight:700;color:var(--text);}
+.xbtn{width:32px;height:32px;background:var(--surf);border:none;border-radius:50%;color:var(--muted);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;}
+#edit-body{width:100%;max-width:400px;padding:22px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;}
+#edit-dp{width:72px;height:72px;border-radius:50%;border:2px solid var(--green);display:block;margin:0 auto;}
+
+
+
+
+50%{box-shadow:0 0 0 18px transparent;}}
+
+
+
+
+to{transform:translateX(-50%) translateY(0);opacity:1;}}
+
+
+/* LOADER */
+#ldr{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:14px;pointer-events:none;}
+.ldr-logo{font-size:32px;font-weight:700;color:var(--green);}
+.ldr-logo span{color:var(--text);}
+.ldots{display:flex;gap:8px;}
+.ldot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:lb 1.2s infinite;}
+.ldot:nth-child(2){animation-delay:.2s;opacity:.7;}.ldot:nth-child(3){animation-delay:.4s;opacity:.4;}
+@keyframes lb{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+
+/* TOAST */
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--surf2);color:var(--text);padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:all .25s;white-space:nowrap;z-index:9000;border:1px solid var(--border);}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* RIPPLE */
+.rh{position:relative;overflow:hidden;}
+@keyframes rpl{to{transform:scale(4);opacity:0;}}
+.rw{position:absolute;border-radius:50%;background:rgba(255,255,255,.28);transform:scale(0);animation:rpl .5s linear;pointer-events:none;}
+
+
+
+/* ── PINNED MESSAGE ── */
+#pin-bar{display:none;padding:8px 14px;background:var(--surf);border-bottom:3px solid var(--green);align-items:center;gap:10px;flex-shrink:0;cursor:pointer;}
+#pin-bar.on{display:flex;}
+#pin-bar-icon{font-size:16px;}
+#pin-bar-text{flex:1;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#pin-bar-close{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;}
+
+/* ── MESSAGE MENU ── */
+@keyframes menuPop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.mmitem{display:flex!important;align-items:center;gap:10px;padding:13px 18px;font-size:14px;font-weight:500;color:var(--text);cursor:pointer;transition:background .15s;}
+.mmitem:active{background:var(--surf);}
+.mmitem.red{color:var(--danger);}
+.mmitem span{font-size:16px;}
+#menu-backdrop{position:fixed;inset:0;z-index:88888;display:none;background:rgba(0,0,0,0.3)}
+#menu-backdrop.on{display:block;}
+
+/* ── PHOTO MESSAGE ── */
+.msg-img{max-width:220px;max-height:220px;border-radius:12px;object-fit:cover;display:block;cursor:pointer;margin-bottom:4px;transition:opacity .2s;}
+.msg-img:active{opacity:.8;}
+.bbl.me .msg-img{border-bottom-right-radius:4px;}
+.bbl.them .msg-img{border-bottom-left-radius:4px;}
+
+/* Photo button in chat footer */
+#photo-btn{width:38px;height:38px;background:var(--surf);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);transition:color .2s;}
+#photo-btn:active{color:var(--green);}
+#photo-btn svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;}
+#photo-input{display:none;}
+
+/* Photo preview before send */
+#photo-preview-bar{display:none;padding:8px 11px;background:var(--card);border-top:1px solid var(--border);align-items:center;gap:10px;flex-shrink:0;}
+#photo-preview-bar.on{display:flex;}
+#preview-thumb{width:52px;height:52px;border-radius:8px;object-fit:cover;border:2px solid var(--green);}
+#preview-info{flex:1;}
+#preview-name{font-size:12px;font-weight:600;color:var(--text);}
+#preview-size{font-size:11px;color:var(--muted);margin-top:2px;}
+#preview-cancel{width:28px;height:28px;background:var(--surf2);border:none;border-radius:50%;color:var(--muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+
+/* Lightbox */
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:none;align-items:center;justify-content:center;}
+#lightbox.on{display:flex;}
+#lightbox img{max-width:95%;max-height:90%;border-radius:12px;object-fit:contain;}
+#lightbox-close{position:absolute;top:16px;right:16px;width:38px;height:38px;background:rgba(255,255,255,.15);border:none;border-radius:50%;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+
+/* ── MESSAGE CONTEXT MENU ── */
+#msg-menu{position:fixed;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:6px 0;z-index:99999;min-width:190px;box-shadow:0 8px 32px rgba(0,0,0,.8);display:none;animation:menuPop .15s ease;left:50%;transform:translateX(-50%);}
+#msg-menu.on{display:block!important;}
+@keyframes menuPop{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
+.mmitem{display:flex;align-items:center;gap:12px;padding:13px 16px;font-size:14px;font-weight:500;color:var(--text);cursor:pointer;transition:background .12s;}
+.mmitem:active{background:var(--surf);}
+.mmitem span{font-size:18px;}
+.mmitem.red{color:var(--danger);}
+
+/* ── REPLY PREVIEW ── */
+#reply-bar{display:none;padding:8px 12px;background:var(--surf);border-top:1px solid var(--border);border-left:3px solid var(--green);margin:0 11px 4px;border-radius:0 8px 8px 0;flex-shrink:0;}
+#reply-bar.on{display:flex;align-items:center;gap:10px;}
+#reply-text{flex:1;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#reply-cancel{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 4px;}
+
+/* Reply preview inside bubble */
+.reply-preview{background:rgba(0,0,0,.2);border-left:3px solid rgba(255,255,255,.4);border-radius:4px;padding:5px 8px;margin-bottom:6px;font-size:11px;color:inherit;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bbl.me .reply-preview{background:rgba(0,0,0,.2);}
+.bbl.them .reply-preview{background:rgba(255,255,255,.07);}
+
+/* ── PINNED MESSAGE ── */
+#pinned-bar{display:none;padding:8px 14px;background:var(--card);border-bottom:2px solid var(--green);align-items:center;gap:10px;cursor:pointer;flex-shrink:0;}
+#pinned-bar.on{display:flex;}
+#pinned-bar span{font-size:14px;}
+#pinned-content{flex:1;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#pinned-content b{color:var(--green);font-size:11px;display:block;margin-bottom:1px;}
+#unpin-btn{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;}
+
+/* Long press highlight */
+.bbl.pressing{opacity:.7;transform:scale(.97);transition:transform .1s,opacity .1s;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:var(--green);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="ldr">
+  <div class="ldr-logo">ADS<span>Chat</span></div>
+  <div class="ldots"><div class="ldot"></div><div class="ldot"></div><div class="ldot"></div></div>
+</div>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div id="auth-top">
+    <div id="auth-logo">ADS Chat</div>
+    <div id="auth-tagline">Connect. Talk. Create.</div>
+  </div>
+  <div id="auth-card">
+    <!-- LOGIN -->
+    <div id="lf">
+      <h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;">Welcome Back</h2>
+      <p class="sub">Login to continue chatting</p>
+      <div class="fg"><label class="flbl">Email</label><input class="finp" id="le" type="email" placeholder="you@example.com"/></div>
+      <div class="fg"><label class="flbl">Password</label><input class="finp" id="lp" type="password" placeholder="••••••••"/></div>
+      <div class="ferr" id="lerr"></div>
+      <button class="btn-p rh" id="lbtn">Login</button>
+      <div class="sw">Don't have an account? <a id="gosu">Sign Up</a></div>
+    </div>
+    <!-- SIGNUP -->
+    <div id="sf" style="display:none;">
+      <h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;">Create Account</h2>
+      <p class="sub">Join ADS Chat today</p>
+      <div class="fg"><label class="flbl">Email</label><input class="finp" id="se" type="email" placeholder="you@example.com"/></div>
+      <div class="fg"><label class="flbl">Password</label><input class="finp" id="sp" type="password" placeholder="Min 6 characters"/></div>
+      <div class="ferr" id="serr"></div>
+      <button class="btn-p rh" id="sbtn">Create Account</button>
+      <div class="sw">Already have an account? <a id="goli">Login</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE SETUP -->
+<div id="prof-screen">
+  <div id="prof-inner">
+    <div style="text-align:center;margin-bottom:4px;">
+      <div style="font-size:21px;font-weight:700;color:var(--text);">Setup Profile</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:3px;">Tell us about yourself</div>
+    </div>
+    <img id="ep" src="" alt=""/>
+    <div>
+      <label class="lbl">Emoji / Identifier (max 2)</label>
+      <input class="inp" id="pemoji" type="text" maxlength="2" placeholder="🙂"/>
+      <div class="cc" id="ec">0/2</div>
+    </div>
+    <div>
+      <label class="lbl">Display Name (max 20)</label>
+      <input class="inp" id="pname" type="text" maxlength="20" placeholder="Your name"/>
+      <div class="cc" id="nc">0/20</div>
+    </div>
+    <div>
+      <label class="lbl">Bio (max 100)</label>
+      <input class="inp" id="pbio" type="text" maxlength="100" placeholder="Hey! I'm using ADS Chat."/>
+      <div class="cc" id="bc">0/100</div>
+    </div>
+    <div id="perr" style="font-size:12px;color:var(--danger);display:none;"></div>
+    <button class="btn-p rh" id="psave">Save &amp; Continue</button>
+  </div>
+</div>
+
+<!-- PROFILE EDIT SCREEN -->
+<div id="edit-screen">
+  <div id="edit-hdr">
+    <button class="xbtn" id="edit-close">✕</button>
+    <h2>Edit Profile</h2>
+  </div>
+  <div id="edit-body">
+    <img id="edit-dp" src="" alt=""/>
+    <div><label class="lbl">Emoji / Identifier</label><input class="inp" id="ee" type="text" maxlength="2"/></div>
+    <div><label class="lbl">Display Name</label><input class="inp" id="en" type="text" maxlength="20"/></div>
+    <div><label class="lbl">Bio</label><input class="inp" id="eb" type="text" maxlength="100"/></div>
+    <button class="btn-p rh" id="esave">Save Changes</button>
+  </div>
+</div>
+
+<!-- SIDE MENU -->
+<div id="menu">
+  <div id="menu-bg"></div>
+  <div id="menu-panel">
+    <div id="menu-inner">
+    <div id="menu-top">
+      <img id="m-dp" src="" alt=""/>
+      <div id="m-name">—</div>
+      <div id="m-uid">—</div>
+      <div id="m-bio">—</div>
+    </div>
+    <div class="mi rh" id="mi-edit"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Profile</div>
+    <div class="mi rh" id="mi-add"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Add Friend</div>
+    <div class="mi red rh" id="mi-logout"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD FRIEND OVERLAY -->
+<div class="ovl" id="af-ovl">
+  <div class="sheet">
+    <h2>Add Friend</h2>
+    <p class="sub">Search by ADS ID (e.g. ar-1234)</p>
+    <div class="fg"><input class="inp" id="af-in" type="text" placeholder="ar-xxxx"/></div>
+    <button class="btn-p rh" id="af-search">Search</button>
+    <div id="sr">
+      <img id="sr-dp" style="width:44px;height:44px;border-radius:50%;" src="" alt=""/>
+      <div style="flex:1;"><div id="sr-name" style="font-weight:600;color:var(--text);font-size:14px;"></div><div id="sr-uid" style="font-size:11px;color:var(--muted);"></div></div>
+      <button class="btn-acc rh" id="af-add">Add</button>
+    </div>
+    <div id="af-err" style="font-size:12px;color:var(--danger);margin-top:8px;display:none;"></div>
+    <button class="btn-p rh" id="af-close" style="background:var(--surf2);color:var(--muted);margin-top:10px;">Cancel</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- PAGES -->
+  <div id="pages">
+
+    <!-- HOME -->
+    <div class="page active" id="p-home">
+      <div class="hdr">
+        <div class="hdr-logo">ADS</div>
+        <h1>Chats</h1>
+        <button class="ico rh" id="h-menu"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        <button class="ico rh" id="h-add"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      </div>
+      <div id="contact-list">
+        <div class="empty" id="no-ct">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <p>No contacts yet.<br/>Add friends with their ADS ID!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- REQUESTS -->
+    <div class="page" id="p-req">
+      <div class="hdr"><h1>Requests</h1></div>
+      <div id="req-list" style="flex:1;overflow-y:auto;padding:6px;">
+        <div class="empty" id="no-req">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg>
+          <p>No pending requests</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pages -->
+
+  <!-- CHAT VIEW (inside app, slides over pages) -->
+  <div id="chat">
+    <div id="chat-hdr">
+      <button class="back rh" id="chat-back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <img id="chat-dp" src="" alt=""/>
+      <div id="chat-info"><div id="chat-name">—</div><div id="chat-status">—</div></div>
+      <button class="ca rh" id="btn-copts"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+    </div>
+    <!-- PINNED MESSAGE BAR -->
+    <div id="pin-bar">
+      <div id="pin-bar-icon">📌</div>
+      <div id="pin-bar-text">—</div>
+      <button id="pin-bar-close">✕</button>
+    </div>
+    <!-- MENU BACKDROP -->
+    <div id="menu-backdrop"></div>
+    <div id="copts">
+      <div class="copt rh" id="opt-clear">Clear Chat</div>
+      <div class="copt red rh" id="opt-remove">Remove Contact</div>
+    </div>
+    <!-- PINNED MESSAGE BAR -->
+    <div id="pinned-bar">
+      <span>📌</span>
+      <div id="pinned-content"><b>Pinned Message</b><span id="pinned-text"></span></div>
+      <button id="unpin-btn">✕</button>
+    </div>
+    <!-- REPLY BAR -->
+    <div id="reply-bar">
+      <div id="reply-text"></div>
+      <button id="reply-cancel">✕</button>
+    </div>
+    <div id="msgs">
+      <div id="typing"><div class="td"></div><div class="td"></div><div class="td"></div></div>
+    </div>
+    <!-- Photo preview bar -->
+    <div id="photo-preview-bar">
+      <img id="preview-thumb" src="" alt=""/>
+      <div id="preview-info">
+        <div id="preview-name">Photo</div>
+        <div id="preview-size"></div>
+      </div>
+      <button id="preview-cancel">✕</button>
+    </div>
+    <div id="chat-foot">
+      <input type="file" id="photo-input" accept="image/*"/>
+      <button id="photo-btn" class="rh"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+      <textarea id="msg-in" rows="1" placeholder="Type a message…"></textarea>
+      <button id="send" class="rh"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div id="nav">
+    <button class="nb on rh" id="nb0"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Chats</span><div class="bdg" id="bdg-chat"></div></button>
+    <button class="nb rh" id="nb1"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg><span>Requests</span><div class="bdg" id="bdg-req"></div></button>
+  </div>
+</div><!-- /app -->
+
+<!-- LIGHTBOX -->
+<div id="lightbox">
+  <button id="lightbox-close">✕</button>
+  <img id="lightbox-img" src="" alt=""/>
+</div>
+
+<!-- MESSAGE CONTEXT MENU -->
+<div id="msg-menu">
+  <div class="mmitem" id="mm-reply"><span>↩️</span> Reply</div>
+  <div class="mmitem" id="mm-copy"><span>📋</span> Copy</div>
+  <div class="mmitem" id="mm-pin"><span>📌</span> Pin</div>
+  <div class="mmitem red" id="mm-delete"><span>🗑️</span> Delete</div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, get, push, onValue, update, remove, serverTimestamp, onDisconnect, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+// ── FIREBASE CONFIG ──────────────────────────
+const FC = {
+  apiKey:"AIzaSyBINtDLQs8FT9FQJkOH2h44cyL0XVF-aoM",
+  authDomain:"ads-chat-dea98.firebaseapp.com",
+  databaseURL:"https://ads-chat-dea98-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"ads-chat-dea98",
+  storageBucket:"ads-chat-dea98.firebasestorage.app",
+  messagingSenderId:"1069502151317",
+  appId:"1:1069502151317:web:67102b8352e704a5e3399c"
+};
+const FB = initializeApp(FC);
+const auth = getAuth(FB);
+const db = getDatabase(FB);
+
+// ── HELPERS ──────────────────────────────────
+const $ = id => document.getElementById(id);
+const emojiSVG = c => {
+  const s = (c||"?").substring(0,2);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="#000"/><text x="50" y="54" text-anchor="middle" dominant-baseline="central" font-size="52" font-family="Segoe UI Emoji,Apple Color Emoji,sans-serif">${s}</text></svg>`;
+  return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg)));
+};
+const genId = () => { let s="ar-"; "abcdefghijklmnopqrstuvwxyz0123456789".split("").sort(()=>Math.random()-.5).slice(0,4).forEach(c=>s+=c); return s; };
+const chatId = (a,b) => [a,b].sort().join("_");
+const fmtTime = ts => ts ? new Date(ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) : "";
+const fmtDur = s => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+const esc = t => t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+// Convert URLs in text to clickable links
+function linkify(text) {
+  const escaped = esc(text);
+  const urlRegex = /(https?:\/\/[^\s<>"{}|\^`[\]]+)/gi;
+  return escaped.replace(urlRegex, url =>
+    `<a href="${url}" target="_blank" rel="noopener noreferrer"
+      onclick="window.open('${url}','_blank');return false;"
+      style="color:inherit;text-decoration:underline;text-underline-offset:3px;
+             font-weight:500;word-break:break-all;cursor:pointer;">${url}</a>`
+  );
+}
+
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("on");
+  setTimeout(() => t.classList.remove("on"), 2600);
+}
+
+// Ripple
+function ripple(el, e) {
+  const r = el.getBoundingClientRect();
+  const sz = Math.max(r.width, r.height);
+  const x = (e.clientX||r.left+r.width/2) - r.left - sz/2;
+  const y = (e.clientY||r.top+r.height/2) - r.top - sz/2;
+  const w = document.createElement("span");
+  w.className = "rw";
+  w.style.cssText = `width:${sz}px;height:${sz}px;left:${x}px;top:${y}px;`;
+  el.appendChild(w);
+  w.addEventListener("animationend", () => w.remove());
+}
+document.querySelectorAll(".rh").forEach(el => el.addEventListener("click", e => ripple(el, e)));
+
+// ── STATE ────────────────────────────────────
+let ME = null, MY = null, PEER = null, CID = null;
+let msgOff = null, typTmout = null;
+
+// ── PAGES NAV ─────────────────────────────────
+const pages = ["p-home","p-req"];
+const nbs = [$("nb0"),$("nb1")];
+
+function goPage(i) {
+  pages.forEach((id,j) => {
+    $( id).classList.toggle("active", i===j);
+    nbs[j].classList.toggle("on", i===j);
+  });
+}
+
+$("nb0").addEventListener("click", () => goPage(0));
+$("nb1").addEventListener("click", () => goPage(1));
+
+// ── AUTH SHOW/HIDE ────────────────────────────
+function showAuth() {
+  $("auth-screen").style.display = "flex";
+  $("lf").style.display = "block";
+  $("sf").style.display = "none";
+}
+function hideAuth() { $("auth-screen").style.display = "none"; }
+function showProf() { $("prof-screen").classList.add("on"); }
+function hideProf() { $("prof-screen").classList.remove("on"); }
+function showApp()  { hideAuth(); hideProf(); $("ldr").style.display="none"; }
+
+// Auth form switch
+$("gosu").addEventListener("click", () => { $("lf").style.display="none"; $("sf").style.display="block"; });
+$("goli").addEventListener("click", () => { $("sf").style.display="none"; $("lf").style.display="block"; });
+
+// Login
+$("lbtn").addEventListener("click", async () => {
+  const e=$("le").value.trim(), p=$("lp").value, err=$("lerr");
+  err.classList.remove("on");
+  if(!e||!p){err.textContent="Fill all fields";err.classList.add("on");return;}
+  try { await signInWithEmailAndPassword(auth,e,p); }
+  catch(ex) { err.textContent=ex.message.replace("Firebase:","").replace(/\(auth\/.*\)/,"").trim(); err.classList.add("on"); }
+});
+
+// Signup
+$("sbtn").addEventListener("click", async () => {
+  const e=$("se").value.trim(), p=$("sp").value, err=$("serr");
+  err.classList.remove("on");
+  if(!e||!p){err.textContent="Fill all fields";err.classList.add("on");return;}
+  try { await createUserWithEmailAndPassword(auth,e,p); }
+  catch(ex) { err.textContent=ex.message.replace("Firebase:","").replace(/\(auth\/.*\)/,"").trim(); err.classList.add("on"); }
+});
+
+// ── PROFILE SETUP ─────────────────────────────
+$("pemoji").addEventListener("input", e => {
+  $("ec").textContent = e.target.value.length+"/2";
+  $("ep").src = emojiSVG(e.target.value||"😊");
+});
+$("pname").addEventListener("input", e => $("nc").textContent=e.target.value.length+"/20");
+$("pbio").addEventListener("input",  e => $("bc").textContent=e.target.value.length+"/100");
+
+$("psave").addEventListener("click", async () => {
+  const emoji=$("pemoji").value.trim()||"😊";
+  const name=$("pname").value.trim();
+  const bio=$("pbio").value.trim();
+  const err=$("perr");
+  if(!name){err.textContent="Name is required";err.style.display="block";return;}
+  const uid=genId(), dpUrl=emojiSVG(emoji);
+  await set(ref(db,`users/${ME.uid}`),{name,bio,emoji,dpUrl,userId:uid,email:ME.email,createdAt:Date.now()});
+  hideProf(); loadMyProfile(); setupPresence(); listenContacts(); listenRequests();
+  showApp();
+});
+
+// ── AUTH STATE ────────────────────────────────
+$("ldr").style.display = "flex";
+onAuthStateChanged(auth, async user => {
+  $("ldr").style.display = "none";
+  if(user) {
+    ME = user;
+    const snap = await get(ref(db,`users/${user.uid}`));
+    if(!snap.exists()) {
+      hideAuth(); showProf();
+      $("ep").src = emojiSVG("😊");
+    } else {
+      MY = snap.val(); showApp();
+      loadMyProfile(); setupPresence();
+      listenContacts(); listenRequests();
+    }
+  } else {
+    ME=null; MY=null; showAuth();
+  }
+});
+
+// ── PRESENCE ─────────────────────────────────
+function setupPresence() {
+  const sr = ref(db,`status/${ME.uid}`);
+  onValue(ref(db,".info/connected"), snap => {
+    if(!snap.val()) return;
+    onDisconnect(sr).set({state:"offline",last_changed:serverTimestamp()});
+    set(sr,{state:"online",last_changed:serverTimestamp()});
+  });
+}
+
+// ── MY PROFILE ────────────────────────────────
+async function loadMyProfile() {
+  const snap = await get(ref(db,`users/${ME.uid}`));
+  MY = snap.val();
+  $("m-dp").src = MY.dpUrl; $("m-name").textContent = MY.name;
+  $("m-uid").textContent = MY.userId; $("m-bio").textContent = MY.bio||"No bio";
+}
+
+// ── CONTACTS ─────────────────────────────────
+const stOff={}, unOff={};
+function listenContacts() {
+  onValue(ref(db,`contacts/${ME.uid}`), snap => {
+    const list=$("contact-list");
+    list.querySelectorAll(".ci").forEach(el=>el.remove());
+    const uids=Object.keys(snap.val()||{});
+    $("no-ct").style.display = uids.length?"none":"flex";
+    uids.forEach(uid=>renderContact(uid,list));
+  });
+}
+
+function renderContact(uid, list) {
+  const el=document.createElement("div"); el.className="ci rh"; el.id="ci-"+uid;
+  el.innerHTML=`<div class="av" id="av-${uid}"><img id="cdp-${uid}" src="" alt=""/><div class="dot"></div></div><div class="ci-info"><div class="ci-name" id="cn-${uid}">…</div><div class="ci-prev" id="cp-${uid}">…</div></div><div class="ci-meta"><div class="ci-time" id="ct-${uid}"></div><div class="ubdg" id="ub-${uid}"></div></div>`;
+  list.appendChild(el);
+  el.addEventListener("click", e=>{ripple(el,e); openChat(uid);});
+
+  get(ref(db,`users/${uid}`)).then(s=>{
+    if(!s.exists())return; const p=s.val();
+    $("cdp-"+uid).src=p.dpUrl; $("cn-"+uid).textContent=p.name;
+    el._profile=p;
+  });
+
+  // Status
+  if(stOff[uid]) stOff[uid]();
+  stOff[uid]=onValue(ref(db,`status/${uid}`), s=>{
+    const av=$("av-"+uid);
+    if(av) av.classList.toggle("online", s.exists()&&s.val().state==="online");
+  });
+
+  // Unread
+  const cid=chatId(ME.uid,uid);
+  if(unOff[uid]) unOff[uid]();
+  unOff[uid]=onValue(ref(db,`unreadCounts/${ME.uid}/${cid}`), s=>{
+    const b=$("ub-"+uid); if(!b)return;
+    const n=s.val()||0; b.textContent=n; b.classList.toggle("on",n>0);
+  });
+
+  // Last message
+  onValue(query(ref(db,`messages/${cid}`),orderByChild("timestamp"),limitToLast(1)), s=>{
+    s.forEach(c=>{
+      const m=c.val();
+      const pr=$("cp-"+uid); const ti=$("ct-"+uid);
+      if(pr) {
+        const prefix = m.senderId===ME.uid ? "You: " : "";
+        pr.textContent = m.type==="photo" ? prefix+"📷 Photo" : prefix+(m.text||"");
+      }
+      if(ti) ti.textContent=fmtTime(m.timestamp);
+    });
+  });
+}
+
+// ── REQUESTS ─────────────────────────────────
+function listenRequests() {
+  onValue(ref(db,`requests/${ME.uid}`), snap => {
+    const rl=$("req-list");
+    rl.querySelectorAll(".ri").forEach(el=>el.remove());
+    const uids=Object.keys(snap.val()||{});
+    $("no-req").style.display=uids.length?"none":"flex";
+    const bdg=$("bdg-req");
+    bdg.textContent=uids.length; bdg.classList.toggle("on",uids.length>0);
+    uids.forEach(fromUid=>{
+      get(ref(db,`users/${fromUid}`)).then(s=>{
+        if(!s.exists())return; const p=s.val();
+        const el=document.createElement("div"); el.className="ri";
+        const img=document.createElement("img");
+        img.src=p.dpUrl; img.style.cssText="width:44px;height:44px;border-radius:50%;flex-shrink:0;";
+        const info=document.createElement("div"); info.className="ri-info";
+        info.innerHTML=`<div class="ri-name">${p.name}</div><div class="ri-id">${p.userId}</div>`;
+        const acts=document.createElement("div"); acts.className="ri-acts";
+        const acc=document.createElement("button"); acc.className="btn-acc rh"; acc.textContent="Accept";
+        acc.addEventListener("click",()=>acceptReq(fromUid));
+        const dec=document.createElement("button"); dec.className="btn-dec rh"; dec.textContent="Decline";
+        dec.addEventListener("click",()=>declineReq(fromUid));
+        acts.appendChild(acc); acts.appendChild(dec);
+        el.appendChild(img); el.appendChild(info); el.appendChild(acts);
+        rl.appendChild(el);
+        [acc,dec].forEach(b=>b.addEventListener("click",e=>ripple(b,e)));
+      });
+    });
+  });
+}
+
+async function acceptReq(uid) {
+  await set(ref(db,`contacts/${ME.uid}/${uid}`),true);
+  await set(ref(db,`contacts/${uid}/${ME.uid}`),true);
+  await remove(ref(db,`requests/${ME.uid}/${uid}`));
+  toast("Contact added! 🎉");
+}
+async function declineReq(uid) {
+  await remove(ref(db,`requests/${ME.uid}/${uid}`));
+  toast("Request declined");
+}
+
+// ── SIDE MENU ─────────────────────────────────
+$("h-menu").addEventListener("click", ()=>{ $("menu").classList.add("on"); });
+$("menu-bg").addEventListener("click", ()=>{ $("menu").classList.remove("on"); });
+$("mi-logout").addEventListener("click", async ()=>{ await signOut(auth); $("menu").classList.remove("on"); });
+$("mi-edit").addEventListener("click", ()=>{ $("menu").classList.remove("on"); openEditProfile(); });
+$("mi-add").addEventListener("click", ()=>{ $("menu").classList.remove("on"); openAddFriend(); });
+$("h-add").addEventListener("click", ()=>openAddFriend());
+
+// ── ADD FRIEND ────────────────────────────────
+function openAddFriend() {
+  $("af-ovl").classList.add("on"); $("af-in").value="";
+  $("sr").classList.remove("on"); $("af-err").style.display="none";
+}
+$("af-close").addEventListener("click", ()=>$("af-ovl").classList.remove("on"));
+$("af-ovl").addEventListener("click", e=>{ if(e.target===$("af-ovl"))$("af-ovl").classList.remove("on"); });
+$("af-search").addEventListener("click", async ()=>{
+  const q=$("af-in").value.trim().toLowerCase();
+  $("af-err").style.display="none"; $("sr").classList.remove("on");
+  if(!q)return;
+  const snap=await get(ref(db,"users")); let found=null;
+  snap.forEach(c=>{ if(c.val().userId===q&&c.key!==ME.uid) found={uid:c.key,...c.val()}; });
+  if(!found){$("af-err").textContent="User not found";$("af-err").style.display="block";return;}
+  $("sr-dp").src=found.dpUrl; $("sr-name").textContent=found.name; $("sr-uid").textContent=found.userId;
+  $("sr").dataset.uid=found.uid; $("sr").classList.add("on");
+});
+$("af-add").addEventListener("click", async ()=>{
+  const uid=$("sr").dataset.uid; if(!uid)return;
+  const ex=await get(ref(db,`contacts/${ME.uid}/${uid}`));
+  if(ex.exists()){toast("Already a contact");return;}
+  await set(ref(db,`requests/${uid}/${ME.uid}`),true);
+  toast("Request sent! ✓"); $("af-ovl").classList.remove("on");
+});
+
+// ── CHAT ─────────────────────────────────────
+async function openChat(uid) {
+  const snap=await get(ref(db,`users/${uid}`));
+  PEER={uid,...snap.val()}; CID=chatId(ME.uid,uid);
+  $("chat-dp").src=PEER.dpUrl; $("chat-name").textContent=PEER.name;
+  $("chat").classList.add("open");
+  set(ref(db,`unreadCounts/${ME.uid}/${CID}`),0);
+  replyData = null; $("reply-bar").classList.remove("on");
+  loadPinnedMsg(CID);
+
+  // Peer status
+  onValue(ref(db,`status/${uid}`), s=>{
+    $("chat-status").textContent=(s.exists()&&s.val().state==="online")?"Online":"Offline";
+  });
+  // Typing
+  onValue(ref(db,`typing/${CID}/${uid}`), s=>{
+    $("typing").classList.toggle("on",!!s.val());
+  });
+  // Messages
+  if(msgOff){msgOff();msgOff=null;}
+  const msgArea=$("msgs");
+  msgArea.innerHTML=`<div id="typing"><div class="td"></div><div class="td"></div><div class="td"></div></div>`;
+
+  const clearedSnap=await get(ref(db,`userChats/${ME.uid}/${CID}`));
+  const clearedAt=clearedSnap.val()?.clearedAt||0;
+
+  msgOff=onValue(ref(db,`messages/${CID}`), snap=>{
+    const typing=$("typing");
+    msgArea.innerHTML=""; msgArea.appendChild(typing);
+    snap.forEach(c=>{
+      const m=c.val(); if(m.timestamp<clearedAt)return;
+      const isMe=m.senderId===ME.uid;
+      renderMsg(m, typing, msgArea);
+    });
+    setTimeout(()=>msgArea.scrollTop=msgArea.scrollHeight,80);
+  });
+}
+
+$("chat-back").addEventListener("click", ()=>{
+  $("chat").classList.remove("open");
+  if(msgOff){msgOff();msgOff=null;}
+  PEER=null; CID=null;
+});
+
+$("msg-in").addEventListener("input", function(){
+  this.style.height="auto"; this.style.height=Math.min(this.scrollHeight,90)+"px";
+  if(CID){
+    set(ref(db,`typing/${CID}/${ME.uid}`),true);
+    clearTimeout(typTmout);
+    typTmout=setTimeout(()=>set(ref(db,`typing/${CID}/${ME.uid}`),false),3000);
+  }
+});
+$("msg-in").addEventListener("keydown", e=>{ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();} });
+$("send").addEventListener("click", sendMsg);
+
+
+
+// ── MESSAGE LONG PRESS MENU ─────────────────────
+let activeMsg = null;   // { el, data, key }
+let pressTimer = null;
+let replyData  = null;
+let pinnedMsg  = null;
+
+function openMsgMenu(el, data, key) {
+  activeMsg = { el, data, key };
+
+  // Show/hide items
+  $("mm-delete").style.display = data.senderId === ME.uid ? "flex" : "none";
+  $("mm-copy").style.display   = data.type === "photo"   ? "none"  : "flex";
+
+  // Center menu on screen vertically
+  const menu = $("msg-menu");
+  menu.style.top    = "50%";
+  menu.style.left   = "50%";
+  menu.style.transform = "translate(-50%, -50%)";
+  menu.style.display = "block";
+  menu.classList.add("on");
+  $("menu-backdrop").classList.add("on");
+
+  // Haptic feedback
+  if (navigator.vibrate) navigator.vibrate([30]);
+}
+
+function closeMsgMenu() {
+  const menu = $("msg-menu");
+  menu.classList.remove("on");
+  menu.style.display = "none";
+  $("menu-backdrop").classList.remove("on");
+  activeMsg = null;
+}
+
+// Backdrop closes menu
+$("menu-backdrop").addEventListener("click", closeMsgMenu);
+
+// ── MENU ACTIONS ──
+// Reply
+$("mm-reply").addEventListener("click", () => {
+  if (!activeMsg) return;
+  const m = activeMsg.data;
+  replyData = { key: activeMsg.key, text: m.type === "photo" ? "📷 Photo" : (m.text || "") };
+  const rb = $("reply-bar");
+  $("reply-text").textContent = "Replying to: " + replyData.text.substring(0, 60);
+  rb.classList.add("on");
+  $("msg-in").focus();
+  closeMsgMenu();
+});
+
+// Copy
+$("mm-copy").addEventListener("click", () => {
+  if (!activeMsg) return;
+  const txt = activeMsg.data.text || activeMsg.data.caption || "";
+  navigator.clipboard.writeText(txt).then(() => toast("Copied! 📋")).catch(() => {
+    // Fallback
+    const ta = document.createElement("textarea");
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); document.body.removeChild(ta);
+    toast("Copied! 📋");
+  });
+  closeMsgMenu();
+});
+
+// Pin
+$("mm-pin").addEventListener("click", async () => {
+  if (!activeMsg) return;
+  const m = activeMsg.data;
+  pinnedMsg = { key: activeMsg.key, text: m.type === "photo" ? "📷 Photo" : (m.text || ""), type: m.type };
+  // Save pin to Firebase
+  await set(ref(db, `userChats/${ME.uid}/${CID}/pinned`), pinnedMsg);
+  await set(ref(db, `userChats/${PEER.uid}/${CID}/pinned`), pinnedMsg);
+  showPinBar(pinnedMsg.text);
+  toast("Message pinned 📌");
+  closeMsgMenu();
+});
+
+// Delete
+$("mm-delete").addEventListener("click", async () => {
+  if (!activeMsg) return;
+  const key = activeMsg.key;
+  const cid = CID;
+  closeMsgMenu();
+  try {
+    await remove(ref(db, `messages/${cid}/${key}`));
+    toast("Message deleted 🗑️");
+  } catch(e) {
+    toast("Delete failed — check Firebase rules");
+    console.error(e);
+  }
+});
+
+// ── REPLY BAR ──
+$("reply-cancel").addEventListener("click", () => {
+  replyData = null;
+  $("reply-bar").classList.remove("on");
+});
+
+// ── PIN BAR ──
+function showPinBar(text) {
+  $("pin-bar-text").textContent = text.substring(0, 80);
+  $("pin-bar").classList.add("on");
+}
+
+$("pin-bar-close").addEventListener("click", async () => {
+  $("pin-bar").classList.remove("on");
+  pinnedMsg = null;
+  await remove(ref(db, `userChats/${ME.uid}/${CID}/pinned`));
+  await remove(ref(db, `userChats/${PEER.uid}/${CID}/pinned`));
+  toast("Pin removed");
+});
+
+$("pin-bar").addEventListener("click", (e) => {
+  if (e.target === $("pin-bar-close")) return;
+  // Scroll to pinned message
+  if (pinnedMsg?.key) {
+    const el = document.getElementById("msg-" + pinnedMsg.key);
+    if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.style.background="rgba(0,168,120,.15)"; setTimeout(()=>el.style.background="",1200); }
+  }
+});
+
+// ── ATTACH LONG PRESS TO A MESSAGE BUBBLE ──
+function attachMsgEvents(el, data, key) {
+  let pt = null, moved = false;
+
+  // TOUCH: long press 600ms
+  el.addEventListener("touchstart", (e) => {
+    moved = false;
+    pt = setTimeout(() => {
+      if (!moved) openMsgMenu(el, data, key);
+    }, 600);
+  }, { passive: true });
+
+  el.addEventListener("touchmove", () => {
+    moved = true;
+    clearTimeout(pt);
+  }, { passive: true });
+
+  el.addEventListener("touchend", () => clearTimeout(pt), { passive: true });
+  el.addEventListener("touchcancel", () => clearTimeout(pt), { passive: true });
+
+  // Desktop: right click
+  el.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    openMsgMenu(el, data, key);
+  });
+}
+
+// ── Load pinned message when chat opens ──
+async function loadPinnedMsg(cid) {
+  const snap = await get(ref(db, `userChats/${ME.uid}/${cid}/pinned`));
+  if (snap.exists()) {
+    pinnedMsg = snap.val();
+    showPinBar(pinnedMsg.text);
+  } else {
+    $("pin-bar").classList.remove("on");
+    pinnedMsg = null;
+  }
+}
+
+// ── PHOTO FEATURE ────────────────────────────────
+let pendingPhoto = null; // {dataUrl, size}
+
+// Compress image to max 800px wide, quality 0.7
+function compressImage(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX = 800;
+        let w = img.width, h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
+        resolve(dataUrl);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function fmtSize(dataUrl) {
+  const bytes = Math.round((dataUrl.length * 3) / 4);
+  return bytes > 1024*1024
+    ? (bytes/1024/1024).toFixed(1)+" MB"
+    : Math.round(bytes/1024)+" KB";
+}
+
+// Photo button click — open file picker
+$("photo-btn").addEventListener("click", () => {
+  if(!CID){ toast("Open a chat first"); return; }
+  $("photo-input").value = "";
+  $("photo-input").click();
+});
+
+// File selected
+$("photo-input").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { toast("Only images allowed"); return; }
+  if (file.size > 10 * 1024 * 1024) { toast("Image too large (max 10MB)"); return; }
+  toast("Compressing…");
+  const dataUrl = await compressImage(file);
+  pendingPhoto = { dataUrl };
+  $("preview-thumb").src = dataUrl;
+  $("preview-name").textContent = file.name.length > 22 ? file.name.substring(0,20)+"…" : file.name;
+  $("preview-size").textContent = fmtSize(dataUrl) + " (compressed)";
+  $("photo-preview-bar").classList.add("on");
+  $("msg-in").placeholder = "Add a caption… (optional)";
+});
+
+// Cancel preview
+$("preview-cancel").addEventListener("click", () => {
+  pendingPhoto = null;
+  $("photo-preview-bar").classList.remove("on");
+  $("photo-input").value = "";
+  $("msg-in").placeholder = "Type a message…";
+});
+
+// Lightbox
+$("lightbox").addEventListener("click", (e) => {
+  if(e.target === $("lightbox") || e.target === $("lightbox-close")) {
+    $("lightbox").classList.remove("on");
+  }
+});
+$("lightbox-close").addEventListener("click", () => $("lightbox").classList.remove("on"));
+
+function openLightbox(src) {
+  $("lightbox-img").src = src;
+  $("lightbox").classList.add("on");
+}
+
+// ── Render a single message (text or photo) ──
+function renderMsg(m, typing, msgArea, key) {
+  const isMe = m.senderId === ME.uid;
+  const b = document.createElement("div");
+  b.className = "bbl " + (isMe ? "me" : "them");
+  if (key) b.id = "msg-" + key;
+
+  // Reply preview
+  let replyHtml = "";
+  if (m.replyTo) {
+    replyHtml = `<div class="reply-preview">↩ ${esc(m.replyTo.substring(0,60))}</div>`;
+  }
+
+  if (m.type === "photo") {
+    let cap = m.caption ? `<div style="margin-bottom:5px;font-size:13px;">${linkify(m.caption)}</div>` : "";
+    b.innerHTML = replyHtml + `<img class="msg-img" src="${m.photo}" alt="photo"/>${cap}<div class="btime">${fmtTime(m.timestamp)}</div>`;
+    b.querySelector(".msg-img").addEventListener("click", () => openLightbox(m.photo));
+  } else {
+    b.innerHTML = replyHtml + `<div style="word-break:break-word;">${linkify(m.text||"")}</div><div class="btime">${fmtTime(m.timestamp)}</div>`;
+  }
+
+  // Attach long press
+  if (key) attachMsgEvents(b, m, key);
+
+  msgArea.insertBefore(b, typing);
+}
+
+async function sendMsg() {
+  const txt = $("msg-in").value.trim();
+
+  // Photo send
+  if (pendingPhoto) {
+    if (!CID) return;
+    const msgData = {
+      type: "photo",
+      photo: pendingPhoto.dataUrl,
+      caption: txt || "",
+      senderId: ME.uid,
+      timestamp: Date.now()
+    };
+    $("msg-in").value = ""; $("msg-in").style.height = "auto";
+    $("photo-preview-bar").classList.remove("on");
+    $("msg-in").placeholder = "Type a message…";
+    pendingPhoto = null;
+    $("photo-input").value = "";
+    set(ref(db,`typing/${CID}/${ME.uid}`),false);
+    await push(ref(db,`messages/${CID}`), msgData);
+    const pr=ref(db,`unreadCounts/${PEER.uid}/${CID}`);
+    get(pr).then(s=>set(pr,(s.val()||0)+1));
+    return;
+  }
+
+  // Text send
+  if (!txt || !CID) return;
+  $("msg-in").value = ""; $("msg-in").style.height = "auto";
+  set(ref(db,`typing/${CID}/${ME.uid}`),false);
+  const msgObj = {type:"text",text:txt,senderId:ME.uid,timestamp:Date.now()};
+  if (replyData) { msgObj.replyTo = replyData.text; replyData = null; $("reply-bar").classList.remove("on"); }
+  await push(ref(db,`messages/${CID}`), msgObj);
+  const pr=ref(db,`unreadCounts/${PEER.uid}/${CID}`);
+  get(pr).then(s=>set(pr,(s.val()||0)+1));
+}
+
+// Chat options
+$("btn-copts").addEventListener("click", e=>{ e.stopPropagation(); $("copts").classList.toggle("on"); });
+document.addEventListener("click", ()=>$("copts").classList.remove("on"));
+$("opt-clear").addEventListener("click", async ()=>{
+  $("copts").classList.remove("on");
+  await set(ref(db,`userChats/${ME.uid}/${CID}`),{clearedAt:Date.now()});
+  toast("Chat cleared"); openChat(PEER.uid);
+});
+$("opt-remove").addEventListener("click", async ()=>{
+  $("copts").classList.remove("on");
+  await remove(ref(db,`contacts/${ME.uid}/${PEER.uid}`));
+  $("chat").classList.remove("open"); toast("Contact removed");
+});
+
+// ── PROFILE EDIT ─────────────────────────────
+function openEditProfile() {
+  $("ee").value=MY.emoji||""; $("en").value=MY.name||""; $("eb").value=MY.bio||"";
+  $("edit-dp").src=MY.dpUrl; $("edit-screen").classList.add("on");
+}
+$("edit-close").addEventListener("click", ()=>$("edit-screen").classList.remove("on"));
+$("ee").addEventListener("input", e=>$("edit-dp").src=emojiSVG(e.target.value||"?"));
+$("esave").addEventListener("click", async ()=>{
+  const emoji=$("ee").value.trim()||MY.emoji;
+  const name=$("en").value.trim(); const bio=$("eb").value.trim();
+  const dpUrl=emojiSVG(emoji);
+  await update(ref(db,`users/${ME.uid}`),{emoji,name,bio,dpUrl});
+  MY={...MY,emoji,name,bio,dpUrl};
+  $("edit-screen").classList.remove("on"); loadMyProfile(); toast("Profile updated! ✓");
+});
+
+
+
+// ── WIRE UP BUTTONS ───────────────────────────
+
+// Draggable local video
+const lv=$("loc-vid"); let drag=false,ox=0,oy=0;
+lv.addEventListener("touchstart",e=>{drag=true;const t=e.touches[0];ox=t.clientX-lv.offsetLeft;oy=t.clientY-lv.offsetTop;},{passive:true});
+document.addEventListener("touchmove",e=>{if(!drag)return;const t=e.touches[0];lv.style.left=(t.clientX-ox)+"px";lv.style.top=(t.clientY-oy)+"px";lv.style.right="auto";},{passive:true});
+document.addEventListener("touchend",()=>drag=false);
+
+console.log("%cADS Chat Ready ✓","color:#00A878;font-size:16px;font-weight:bold;");
+</script>
+</body>
+</html>
